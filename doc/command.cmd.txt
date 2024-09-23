@@ -1,0 +1,142 @@
+//vscode install solidity plugins
+npm init
+npm install -g npm@8.19.0
+npm install --save-dev hardhat
+npm install --save-dev @nomicfoundation/hardhat-toolbox
+npx hardhat
+mkdir contracts
+mkdir scripts
+npm install @openzeppelin/contracts
+npm install dotenv --save
+//npm install --save-dev @nomiclabs/hardhat-ethers ethers@^5.0.0
+npm install --save-dev @nomicfoundation/hardhat-ethers ethers
+
+npx hardhat compile
+npx hardhat --network goerli run scripts/deploy.js
+
+npm install @alch/alchemy-web3
+node scripts/mint-nft.js
+
+
+
+hardhat.config.js
+/** @type import('hardhat/config').HardhatUserConfig */
+require('dotenv').config();
+require("@nomicfoundation/hardhat-toolbox");
+require("@nomicfoundation/hardhat-ethers");
+const { API_URL, PRIVATE_KEY, PUBLIC_KEY} = process.env;
+module.exports = {
+  solidity: "0.8.19",
+  defaultNetwork: "goerli",
+  networks: {
+     hardhat: {},
+     goerli: {
+        url: API_URL,
+        accounts: [`0x${PRIVATE_KEY}`],
+        chainId: 5,
+        allowUnlimitedContractSize: true,
+     },
+     local: {
+        url: "http://127.0.0.1:8545/",
+        accounts: ["0xe70134b027d53a5efdeb341127f922a018e25fbe8bb38b83a07fb7038f7c8389"],
+        chainId: 1337,
+     },	
+  },
+};
+
+.env
+API_URL="https://eth-goerli.g.alchemy.com/v2/OnxS3BDNOh5iSBUHf0Ddph8Yv8aYL2N9"
+PRIVATE_KEY="f119a30cf860ba61079283fed80867629e5e85d70e09403f39840e5e86d3ca07"
+PUBLIC_KEY = "0x4001e70D84F4BE5A1853AD94a90882492240BD39"
+LOCAL_RPC_URL="http://127.0.0.1:8545/"
+LOCAL_PRIVATE_KEY="0xe70134b027d53a5efdeb341127f922a018e25fbe8bb38b83a07fb7038f7c8389"
+LOCAL_PUBLIC_KEY="0xCd9Ad669A739AA3ff1298a3c8A645ED6f808a1Eb"
+API_URL_MATIC="https://polygon-mumbai.g.alchemy.com/v2/Hq1XRlmLWehLAFmv7BvD6wXcQ_4pH04L"
+MUMB_PRIVATE_KEY="70b934a754bf1952bafa57ef72fba1061020f74074f0016680065da2eeb57d2f"
+MUMB_RPC_URL="https://rpc-mumbai.maticvigil.com/"
+MUMB_PUBLIC_KEY="0x2277a9def28869C34bfc4a97DA9F9c85Ef82AB1B"
+
+
+deploy.js
+
+async function main() {
+  const [deployer] = await ethers.getSigners();
+
+  console.log("Deploying contracts with the account:", deployer.address);
+
+  const nftToken = await ethers.deployContract("EternalNFT");
+
+  console.log("Token address:", await nftToken.getAddress());
+
+
+  //const MyNFT = await ethers.getContractFactory("EternalNFT")
+  //const myNFT = await MyNFT.deploy()
+  //await myNFT.deployed()
+  //console.log("Contract deployed to address:", myNFT.address)
+}
+
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+  
+  
+  
+mint-nft.js
+require("dotenv").config()
+const API_URL = process.env.API_URL
+const PUBLIC_KEY = process.env.PUBLIC_KEY
+const PRIVATE_KEY = process.env.PRIVATE_KEY
+
+const { createAlchemyWeb3 } = require("@alch/alchemy-web3")
+const web3 = createAlchemyWeb3(API_URL)
+
+const contract = require("../artifacts/contracts/MyNFT.sol/MyNFT.json")
+const contractAddress = "0x17470a08489c83A9AAf7fC5f3CfDb43D7c1ff8a4"
+
+const nftContract = new web3.eth.Contract(contract.abi, contractAddress)
+
+async function mintNFT(tokenURI) {
+  const nonce = await web3.eth.getTransactionCount(PUBLIC_KEY, "latest") //get latest nonce
+
+  //the transaction
+  const tx = {
+    from: PUBLIC_KEY,
+    to: contractAddress,
+    nonce: nonce,
+    gas: 500000,
+    data: nftContract.methods.mintNFT(PUBLIC_KEY, tokenURI).encodeABI(),
+  }
+
+  const signPromise = web3.eth.accounts.signTransaction(tx, PRIVATE_KEY)
+  signPromise
+    .then((signedTx) => {
+      web3.eth.sendSignedTransaction(
+        signedTx.rawTransaction,
+        function (err, hash) {
+          if (!err) {
+            console.log(
+              "The hash of your transaction is: ",
+              hash,
+              "\nCheck Alchemy's Mempool to view the status of your transaction!"
+            )
+          } else {
+            console.log(
+              "Something went wrong when submitting your transaction:",
+              err
+            )
+          }
+        }
+      )
+    })
+    .catch((err) => {
+      console.log(" Promise failed:", err)
+    })
+}
+
+mintNFT("ipfs://QmYv8dkCHviVShjfZiA5z2xSUUz8Zt3Xd3drhxWozQDh9f")
+
+
+

@@ -1,0 +1,16 @@
+{
+    "attributes": [
+      {
+        "trait_type": "art",
+        "value": "picture"
+      },
+      {
+        "trait_type": "style",
+        "value": "nature"
+      }
+    ],
+    "description": "A buitiful cloud.",
+    "image": "https://aqua-nearby-monkey-214.mypinata.cloud/ipfs/Qme5iyhyRjmrbyDHtMzEMLoDcsxFT9tEnEzwkHUu8X2kRm",
+    "name": "bcloud"
+  }
+  
